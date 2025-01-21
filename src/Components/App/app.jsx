@@ -23,6 +23,8 @@ export default class App extends Component {
       description: text,
       created: new Date(),
       done: false,
+      timer: 0,
+      isRunning: false,
     };
   }
 
@@ -55,7 +57,6 @@ export default class App extends Component {
     });
   };
 
-
   onEditTask = (id, newDescription) => {
     this.setState(({ tasks }) => {
       const idx = tasks.findIndex((el) => el.id === id);
@@ -81,6 +82,41 @@ export default class App extends Component {
     });
   };
 
+  toggleTimer = (id) => {
+    this.setState(({ tasks }) => {
+      const idx = tasks.findIndex((task) => task.id === id);
+      const task = tasks[idx];
+      if (task.isRunning) {
+        clearInterval(task.timerInterval);
+      } else {
+        task.timerInterval = setInterval(() => {
+          this.incrementTimer(id);
+        }, 1000);
+      }
+      const updatedTask = { ...task, isRunning: !task.isRunning };
+      const newArray = [
+        ...tasks.slice(0, idx),
+        updatedTask,
+        ...tasks.slice(idx + 1),
+      ];
+      return { tasks: newArray };
+    });
+  };
+
+  incrementTimer = (id) => {
+    this.setState(({ tasks }) => {
+      const idx = tasks.findIndex((task) => task.id === id);
+      const task = tasks[idx];
+      const updatedTask = { ...task, timer: task.timer + 1 };
+      const newArray = [
+        ...tasks.slice(0, idx),
+        updatedTask,
+        ...tasks.slice(idx + 1),
+      ];
+      return { tasks: newArray };
+    });
+  };
+
   render() {
     const { tasks, filter } = this.state;
     const todoCount = tasks.filter((task) => !task.done).length;
@@ -101,6 +137,7 @@ export default class App extends Component {
             onDeleted={this.deleteItem}
             onToggleDone={this.onToggleDone}
             onEditTask={this.onEditTask}
+            onToggleTimer={this.toggleTimer}
           />
           <Footer
             count={todoCount}
