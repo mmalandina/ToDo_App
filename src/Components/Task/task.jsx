@@ -12,6 +12,41 @@ export default class Task extends Component {
       .padStart(2, "0")}`;
   };
 
+  constructor(props) {
+    super(props);
+    this.state = {
+      isEditing: false,
+      newDescription: this.props.description,
+    };
+  }
+
+  onToggleEdit = () => {
+    this.setState({ isEditing: true });
+  };
+
+  onDescriptionChange = (e) => {
+    this.setState({ newDescription: e.target.value });
+  };
+
+  onSubmit = () => {
+    const { id, onEditTask } = this.props;
+    const { newDescription } = this.state;
+    onEditTask(id, newDescription);
+    this.setState({ isEditing: false });
+  };
+
+  handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      this.onSubmit();
+    }
+  };
+
+  componentDidUpdate(prevProps) {
+    if (prevProps.description !== this.props.description) {
+      this.setState({ newDescription: this.props.description });
+    }
+  }
+
   render() {
     const {
       id,
@@ -26,13 +61,34 @@ export default class Task extends Component {
       onEditTask,
     } = this.props;
 
+    const { isEditing, newDescription } = this.state;
+
     const distanceToNow = formatDistanceToNow(new Date(created), {
       includeSeconds: true,
     });
 
     let classNames = "task";
     if (done) {
-      classNames += " done";
+      classNames += " done completed";
+    }
+    if (isEditing) {
+      classNames += " editing";
+    }
+
+    let input;
+
+    if (isEditing) {
+      input = (
+        <input
+          type="text"
+          className="edit"
+          value={newDescription}
+          onChange={this.onDescriptionChange}
+          onKeyDown={this.handleKeyDown}
+        />
+      );
+    } else {
+      input = null;
     }
 
     return (
@@ -59,10 +115,11 @@ export default class Task extends Component {
           </label>
           <button
             className="icon icon-edit"
-            onClick={() => onEditTask(id, description)}
+            onClick={this.onToggleEdit}
           ></button>
           <button className="icon icon-destroy" onClick={onDeleted}></button>
         </div>
+        {input}
       </div>
     );
   }

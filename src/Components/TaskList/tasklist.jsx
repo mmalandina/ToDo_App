@@ -13,7 +13,7 @@ function TaskList({
   return (
     <ul className="todo-list">
       {tasks.map((task) => (
-        <li key={task.id}>
+        <li key={task.id} className={task.done ? "completed" : ""}>
           <Task
             {...task}
             onDeleted={() => onDeleted(task.id)}

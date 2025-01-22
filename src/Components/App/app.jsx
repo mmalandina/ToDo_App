@@ -30,6 +30,10 @@ export default class App extends Component {
 
   deleteItem = (id) => {
     this.setState(({ tasks }) => {
+      const taskToDelete = tasks.find((task) => task.id === id);
+      if (taskToDelete?.timerInterval) {
+        clearInterval(taskToDelete.timerInterval);
+      }
       const newArray = tasks.filter((task) => task.id !== id);
       return { tasks: newArray };
     });
@@ -118,7 +122,7 @@ export default class App extends Component {
   };
 
   render() {
-    const { tasks, filter } = this.state;
+    const { tasks, filter, isEditing, newDescription } = this.state;
     const todoCount = tasks.filter((task) => !task.done).length;
     const visibleTasks = tasks.filter((task) => {
       if (filter === "All") return true;
