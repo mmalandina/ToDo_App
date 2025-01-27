@@ -10,21 +10,30 @@ export default class App extends Component {
 
   state = {
     tasks: [
-      this.createTodoItem("Task 1"),
-      this.createTodoItem("Task 2"),
-      this.createTodoItem("Task 3"),
+      this.createTodoItem("Task 1", 3600),
+      this.createTodoItem("Task 2", 3600),
+      this.createTodoItem("Task 3", 3600),
     ],
     filter: "All",
   };
 
-  createTodoItem(text) {
+  componentWillUnmount() {
+    this.state.tasks.forEach((task) => {
+      if (task.timerInterval) {
+        clearInterval(task.timerInterval);
+      }
+    });
+  }
+
+  createTodoItem(text, timerSeconds) {
     return {
       id: this.currentId++,
       description: text,
       created: new Date(),
       done: false,
-      timer: 0,
+      timer: timerSeconds,
       isRunning: false,
+      timerInterval: null,
     };
   }
 
@@ -39,12 +48,11 @@ export default class App extends Component {
     });
   };
 
-  addItem = (text) => {
-    const newItem = this.createTodoItem(text);
-    this.setState(({ tasks }) => {
-      const newArray = [...tasks, newItem];
-      return { tasks: newArray };
-    });
+  addItem = (description, timerSeconds) => {
+    const newItem = this.createTodoItem(description, timerSeconds || 0);
+    this.setState(({ tasks }) => ({
+      tasks: [...tasks, newItem],
+    }));
   };
 
   onToggleDone = (id) => {
@@ -81,48 +89,70 @@ export default class App extends Component {
 
   clearCompleted = () => {
     this.setState(({ tasks }) => {
+      tasks.forEach((task) => {
+        if (task.done && task.timerInterval) {
+          clearInterval(task.timerInterval);
+        }
+      });
+      
       const filteredTasks = tasks.filter((task) => !task.done);
       return { tasks: filteredTasks };
     });
   };
 
-  toggleTimer = (id) => {
+  updateTask = (id, updates) => {
     this.setState(({ tasks }) => {
-      const idx = tasks.findIndex((task) => task.id === id);
-      const task = tasks[idx];
-      if (task.isRunning) {
-        clearInterval(task.timerInterval);
-      } else {
-        task.timerInterval = setInterval(() => {
-          this.incrementTimer(id);
-        }, 1000);
-      }
-      const updatedTask = { ...task, isRunning: !task.isRunning };
-      const newArray = [
-        ...tasks.slice(0, idx),
-        updatedTask,
-        ...tasks.slice(idx + 1),
-      ];
-      return { tasks: newArray };
+      const updatedTasks = tasks.map((task) =>
+        task.id === id ? { ...task, ...updates } : task
+      );
+      return { tasks: updatedTasks };
     });
   };
 
-  incrementTimer = (id) => {
-    this.setState(({ tasks }) => {
-      const idx = tasks.findIndex((task) => task.id === id);
-      const task = tasks[idx];
-      const updatedTask = { ...task, timer: task.timer + 1 };
-      const newArray = [
-        ...tasks.slice(0, idx),
-        updatedTask,
-        ...tasks.slice(idx + 1),
-      ];
-      return { tasks: newArray };
-    });
+  startTimer = (id) => {
+    const task = this.state.tasks.find((task) => task.id === id);
+    if (!task || task.timerInterval) return;
+
+    const timerInterval = setInterval(() => {
+      this.setState(({ tasks }) => {
+        const updatedTasks = tasks.map((t) => {
+          if (t.id === id && t.timer > 0) {
+            return { ...t, timer: t.timer - 1 };
+          }
+          if (t.id === id && t.timer <= 0) {
+            clearInterval(t.timerInterval);
+            return { ...t, timer: 0, isRunning: false, timerInterval: null };
+          }
+          return t;
+        });
+        return { tasks: updatedTasks };
+      });
+    }, 1000);
+
+    this.updateTask(id, { timerInterval, isRunning: true });
+  };
+
+  stopTimer = (id) => {
+    const task = this.state.tasks.find((task) => task.id === id);
+    if (!task || !task.timerInterval) return;
+
+    clearInterval(task.timerInterval);
+    this.updateTask(id, { timerInterval: null, isRunning: false });
+  };
+
+  toggleTimer = (id) => {
+    const task = this.state.tasks.find((task) => task.id === id);
+    if (!task) return;
+
+    if (task.isRunning) {
+      this.stopTimer(id);
+    } else {
+      this.startTimer(id);
+    }
   };
 
   render() {
-    const { tasks, filter, isEditing, newDescription } = this.state;
+    const { tasks, filter } = this.state;
     const todoCount = tasks.filter((task) => !task.done).length;
     const visibleTasks = tasks.filter((task) => {
       if (filter === "All") return true;
@@ -153,11 +183,6 @@ export default class App extends Component {
     );
   }
 }
-
-App.defaultProps = {
-  tasks: [],
-  filter: "All",
-};
 
 App.propTypes = {
   tasks: PropTypes.arrayOf(PropTypes.object),

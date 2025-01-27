@@ -38,14 +38,13 @@ export default class Task extends Component {
   handleKeyDown = (e) => {
     if (e.key === "Enter") {
       this.onSubmit();
+    } else if (e.key === "Escape" && this.state.isEditing) {
+      this.setState({
+        isEditing: false,
+        newDescription: this.props.description,
+      });
     }
   };
-
-  componentDidUpdate(prevProps) {
-    if (prevProps.description !== this.props.description) {
-      this.setState({ newDescription: this.props.description });
-    }
-  }
 
   render() {
     const {
