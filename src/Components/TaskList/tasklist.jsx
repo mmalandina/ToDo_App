@@ -1,19 +1,19 @@
-import React from "react";
-import PropTypes from "prop-types";
-import Task from "../Task";
-import "./tasklist.css";
+import React from 'react';
+import PropTypes from 'prop-types';
+import Task from '../Task';
+import './tasklist.css';
 
 function TaskList({
-  tasks,
-  onDeleted,
-  onToggleDone,
-  onEditTask,
-  onToggleTimer,
+  tasks = [],
+  onDeleted = () => {},
+  onToggleDone = () => {},
+  onEditTask = () => {},
+  onToggleTimer = () => {},
 }) {
   return (
     <ul className="todo-list">
       {tasks.map((task) => (
-        <li key={task.id} className={task.done ? "completed" : ""}>
+        <li key={task.id} className={task.done ? 'completed' : ''}>
           <Task
             {...task}
             onDeleted={() => onDeleted(task.id)}
@@ -26,14 +26,6 @@ function TaskList({
     </ul>
   );
 }
-
-TaskList.defaultProps = {
-  tasks: [],
-  onDeleted: () => {},
-  onToggleDone: () => {},
-  onEditTask: () => {},
-  onToggleTimer: () => {},
-};
 
 TaskList.propTypes = {
   tasks: PropTypes.arrayOf(PropTypes.object),
